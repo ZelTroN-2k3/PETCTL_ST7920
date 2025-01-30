@@ -1,5 +1,27 @@
-/*****************************************************
+/******************************************************
    PETCTL - Exemple modifié pour U8glib + ST7920
+   https://github.com/ZelTroN-2k3/PETCTL_ST7920
+*******************************************************
+*******************************************************
+  CFG_ENC_DT            2 pin encoder DT 
+  CFG_ENC_CLK           3 pin encoder CLK 
+  CFG_ENC_SW            4 pin encoder SW 
+
+  CFG_STEP_DIR_PIN      5 pin stepper driver DIR 
+  CFG_STEP_STEP_PIN     6 pin stepper driver STEP 
+  CFG_STEP_EN_PIN       7 pin stepper driver EN 
+
+  CFG_ENDSTOP_PIN       8 pin ENDSTOP 
+  CFG_EMENDSTOP_PIN    12 pin EMENDSTOP 
+
+  CFG_HEATER_PIN        9 pin MOSFET
+
+  U8g2 pour ST7920     10 pin CS
+  U8g2 pour ST7920     11 pin DATA
+  U8g2 pour ST7920     13 pin CLK
+
+  CFG_TERM_PIN         A0 pin Termistor
+  CFG_SOUND_PIN        A1 pin Buzzer
 *****************************************************/
 
 #include "PETCTL_cfg.h"
