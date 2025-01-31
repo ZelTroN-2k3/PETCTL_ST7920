@@ -1,8 +1,8 @@
 /******************************************************
    PETCTL - Exemple modifié pour U8glib + ST7920
    https://github.com/ZelTroN-2k3/PETCTL_ST7920
-*******************************************************
-*******************************************************
+*******************************************************/
+/*================================================================================================
   CFG_ENC_DT            2 pin encoder DT 
   CFG_ENC_CLK           3 pin encoder CLK 
   CFG_ENC_SW            4 pin encoder SW 
@@ -16,14 +16,37 @@
 
   CFG_HEATER_PIN        9 pin MOSFET
 
-  U8g2 pour ST7920     10 pin CS
-  U8g2 pour ST7920     11 pin DATA
-  U8g2 pour ST7920     13 pin CLK
+  Display ST7920       10 pin CS
+  Display ST7920       11 pin DATA
+  Display ST7920       13 pin CLK
 
   CFG_TERM_PIN         A0 pin Termistor
   CFG_SOUND_PIN        A1 pin Buzzer
-*****************************************************/
 
+/*================================================================================================
+                                           +-----+
+                              +------------| USB |------------+
+                              |            +-----+            |
+  pin CLK     display ST7920  | [ ]D13/SCK        MISO/D12[ ] |  CFG_EMENDSTOP_PIN pin EMENDSTOP 
+                              | [ ]3.3V           MOSI/D11[ ]~|  display ST7920    pin DATA
+                              | [ ]V.ref     ___    SS/D10[ ]~|  display ST7920    pin CS
+  pin Termistor CFG_TERM_PIN  | [ ]A0       / N \       D9[ ]~|  CFG_HEATER_PIN    pin MOSFET
+  pin Buzzer   CFG_SOUND_PIN  | [ ]A1      /  A  \      D8[ ] |  CFG_ENDSTOP_PIN   pin ENDSTOP 
+                              | [ ]A2      \  N  /      D7[ ] |  CFG_STEP_EN_PIN   pin stepper
+                              | [ ]A3       \_0_/       D6[ ]~|  CFG_STEP_STEP_PIN pin stepper
+                              | [ ]A4/SDA               D5[ ]~|  CFG_STEP_DIR_PIN  pin stepper
+                              | [ ]A5/SCL               D4[ ] |  CFG_ENC_SW        pin encoder
+                              | [ ]A6              INT1/D3[ ]~|  CFG_ENC_CLK       pin encoder
+                              | [ ]A7              INT0/D2[ ] |  CFG_ENC_DT        pin encoder
+                         +5v  | [ ]5V                  GND[ ] |
+                              | [ ]RST                 RST[ ] | 
+                         GND  | [ ]GND   5V MOSI GND   TX1[ ] | 
+                              | [ ]Vin   [ ] [ ] [ ]   RX1[ ] | 
+                              |          [ ] [ ] [ ]          |
+                              |          MISO SCK RST         |
+                              | NANO-V3                       |
+                              +-------------------------------+
+================================================================================================*/
 #include "PETCTL_cfg.h"
 #define SPEED_MAX 10
 
@@ -38,6 +61,7 @@ GStepper<STEPPER2WIRE> stepper(200 * CFG_STEP_DIV, CFG_STEP_STEP_PIN, CFG_STEP_D
 //  Création de l'objet U8g2 pour ST7920  "Adapté à votre câblage : (CLK, DATA, CS)"
 // -------------------------------------------------------------------------------------
 // Maintenant pour l’écran ST7920 128x64 en 3 fils software SPI :
+// U8GLIB_ST7920_128X64 u8g(/* clock=*/ 13, /* data=*/ 11, /* cs=*/ 10, U8G_PIN_NONE);  
 U8GLIB_ST7920_128X64_1X u8g(/* clock=*/ 13, /* data=*/ 11, /* cs=*/ 10);  
 
 #define CLK CFG_ENC_CLK
@@ -134,16 +158,12 @@ void setup() {
   #if defined(CFG_SOUND_START)
     beepE();
   #endif
-  // On peut faire un petit écran de démarrage en utilisant U8glib:
+
+  // === ICI on redessine Boot Screen l'écran ===
   u8g.firstPage();
   do {
-    // On choisit une police grande :
-    u8g.setFont(u8g_font_9x15B);
-    u8g.drawStr(20, 20, "PETCTL");
-    u8g.setFont(u8g_font_6x12);
-    u8g.drawStr(25, 40, "mvb V0.11");
+    drawBootScreen();
   } while(u8g.nextPage());
-  delay(4000); // 2 secondes de splash
 
     enc1.setType(CFG_ENC_TYPE);
     enc1.setPinMode(LOW_PULL);
@@ -370,7 +390,7 @@ void emStop(int reason) {
   // On dessine un écran "Halt" avant de bloquer
   u8g.firstPage();
   do {
-    u8g.setFont(u8g_font_9x15B);
+    u8g.setFont(u8g_font_9x15Br);
     u8g.drawStr(0, 20, "*HALT!*");
     u8g.setFont(u8g_font_6x12);
     switch (reason) {
@@ -441,13 +461,6 @@ void motorCTL(long setSpeedX10) {
 void printHeaterStatus(boolean status) {
   // Ne dessine plus rien directement
   // On se contente de modifier la variable Heat si besoin
-  /*u8g.firstPage();
-  do {
-    u8g.setPrintPos(20, 40);
-    if (status) u8g.print("*");
-    else        u8g.print(".");  
-
-  } while(u8g.nextPage());*/
 }
 
 
@@ -531,6 +544,26 @@ float simpleKalman(float newVal) {
 }
 
 /*****************************************************
+   drawBootScreen()
+   => dessine TOUT l'écran en fonction des variables
+*****************************************************/
+void drawBootScreen() {
+  // On peut faire un petit écran de démarrage en utilisant U8glib:
+  u8g.firstPage();
+  do {
+    // On choisit une police grande :
+    u8g.setFont(u8g_font_9x15Br);
+    // We want the reference position for printing the string to be in the upper left corner of that string
+    u8g.setFontPosTop(); 
+    // X i Y coordinates where the string wants to print out on the display
+    u8g.setPrintPos(20, 10); u8g.print("PETCTL");
+    u8g.setFont(u8g_font_6x12);
+    u8g.setPrintPos(25, 40); u8g.print("mvb V0.11");
+  } while(u8g.nextPage());
+  delay(4000); // 2 secondes de splash
+} 
+
+/*****************************************************
    drawScreen()
    => dessine TOUT l'écran en fonction des variables
 *****************************************************/
@@ -538,31 +571,28 @@ void drawScreen() {
   // Si vous voulez alterner polices, on peut le faire
   // Ici, on va en utiliser deux (une petite, une moyenne)
 
-  // 1) Dessin du cadre
-  u8g.drawFrame(0, 0, 128, 64);
-  // 2) Dessin ligne
-  u8g.drawLine(0, 13, 128, 13);
-  // 3) Dessin ligne
-  u8g.drawLine(74, 0, 74, 13);
-  // 4) Dessin ligne
-  u8g.drawLine(0, 52, 128, 52);
+ 
+  u8g.drawFrame(0, 0, 128, 64);   // 1) Dessin du cadre
+  u8g.drawLine(0, 13, 128, 13);   // 2) Dessin ligne haut
+  u8g.drawLine(74, 0, 74, 13);    // 3) Dessin petit ligne verticale
+  u8g.drawLine(0, 52, 128, 52);   // 4) Dessin ligne bas
 
   // Températures en gros (ou moyen)
   // Température courante
   { 
-    u8g.setFont(u8g_font_9x15B);
+    u8g.setFont(u8g_font_9x15Br);
     char buf[10];
     dtostrf(curTemp, 4, 1, buf);
     // y=30 (baseline) => on voit le texte vers 30
     u8g.setPrintPos(8, 12);
     u8g.print(buf);
     u8g.setPrintPos(2, 8);
-    u8g.setFont(u8g_font_5x8); u8g.print("C"); // current
+    u8g.setFont(u8g_font_5x8r); u8g.print("C"); // current
   }
 
   // Température cible
   {
-    u8g.setFont(u8g_font_9x15B);
+    u8g.setFont(u8g_font_9x15Br);
     // Dessin "Heat" ou pas. -> si Heat = true => on affiche "*"
     u8g.setPrintPos(76, 10);
     if (Heat) u8g.print("*");
@@ -581,19 +611,19 @@ void drawScreen() {
       u8g.setPrintPos(80, 12);
       u8g.print(buf);
       u8g.setPrintPos(116, 8);
-      u8g.setFont(u8g_font_5x8); u8g.print("C");
+      u8g.setFont(u8g_font_5x8r); u8g.print("C");
       // Revenir en couleur normale
       u8g.setColorIndex(1);
     } else {
       u8g.print(buf);
       u8g.setPrintPos(116, 8);
-      u8g.setFont(u8g_font_5x8); u8g.print("C");
+      u8g.setFont(u8g_font_5x8r); u8g.print("C");
     }
   }
 
   // Vitesse en mm/s
   {
-    u8g.setFont(u8g_font_9x15B);
+    u8g.setFont(u8g_font_9x15Br); //font_blipfest_07n
     // l’indicateur runMotor ou pas. -> si Run = true => on affiche "*"
     //u8g.setFont(u8g_font_6x12);
     u8g.setPrintPos(3, 32);
@@ -624,7 +654,7 @@ void drawScreen() {
 
   // Avancement (métrage)
   {
-    u8g.setFont(u8g_font_9x15B);
+    u8g.setFont(u8g_font_9x15Br);
     float dist = getMilage(); // en mètres ?
     // Dans votre code, getMilage() renvoie "deg * REDCONST"
     // A vous de voir l'unité exacte (mm, m, etc.)
@@ -632,7 +662,7 @@ void drawScreen() {
     dtostrf(dist, 4, 2, buf);
     u8g.setPrintPos(12, 48);
     u8g.print(buf);
-    u8g.setFont(u8g_font_5x8);
+    u8g.setFont(u8g_font_5x8r);
     u8g.print(" m");
   }
 
@@ -641,12 +671,12 @@ void drawScreen() {
   if (!digitalRead(CFG_ENDSTOP_PIN)) {
     // Petit symbole "*"
     u8g.setFont(u8g_font_6x12);
-    u8g.setPrintPos(110, 50);
+    u8g.setPrintPos(105, 62);
     u8g.print("END");
   }
   if (!digitalRead(CFG_EMENDSTOP_PIN)) {
     u8g.setFont(u8g_font_6x12);
-    u8g.setPrintPos(110, 50);
+    u8g.setPrintPos(105, 62);
     u8g.print("X");
   }
 }
