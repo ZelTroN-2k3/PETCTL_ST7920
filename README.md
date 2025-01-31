@@ -7,6 +7,12 @@
 
 - Version 0.11a
 https://github.com/ZelTroN-2k3/PETCTL_ST7920/blob/v0.11a/image_ecran1.jpg
+
+- Le croquis utilise 23750 octets (77%) de l'espace de stockage de programmes.
+- Le maximum est de 30720 octets.
+  Les variables globales utilisent 553 octets (27%) de mémoire dynamique,
+  ce qui laisse 1495 octets pour les variables locales. Le maximum est de 2048 octets.
+
 # Source code Original de l'auteur: https://github.com/mvbasov/PETCTL/tree/github
 # Comment gérer
 Les commandes se sont avérées très pratiques (pour moi) :
