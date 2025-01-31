@@ -59,14 +59,15 @@ GStepper<STEPPER2WIRE> stepper(200 * CFG_STEP_DIV, CFG_STEP_STEP_PIN, CFG_STEP_D
 #include <U8glib.h>
 // -------------------------------------------------------------------------------------
 //  Création de l'objet U8g2 pour ST7920  "Adapté à votre câblage : (CLK, DATA, CS)"
+//  Maintenant pour l’écran ST7920 128x64 en 3 fils software SPI:
 // -------------------------------------------------------------------------------------
-// Maintenant pour l’écran ST7920 128x64 en 3 fils software SPI :
 // U8GLIB_ST7920_128X64 u8g(/* clock=*/ 13, /* data=*/ 11, /* cs=*/ 10, U8G_PIN_NONE);  
 U8GLIB_ST7920_128X64_1X u8g(/* clock=*/ 13, /* data=*/ 11, /* cs=*/ 10);  
 
 #define CLK CFG_ENC_CLK
 #define DT CFG_ENC_DT
 #define SW CFG_ENC_SW
+
 #include "GyverEncoder.h"
 Encoder enc1(CLK, DT, SW);
 int value = 0;
@@ -85,11 +86,8 @@ GyverPID regulator(CFG_PID_P, CFG_PID_I, CFG_PID_D, 200);
 boolean Heat = false;
 
 #define GEAR_RATIO ((float)CFG_RED_G1 * (float)CFG_RED_G2 * (float)CFG_RED_G3)
-/*
-Bobin round length
- 74 * Pi = 232.478
- 232.478 mm - bobin round length
-*/
+
+/* Bobin round length 74 * Pi = 232.478 232.478 mm - bobin round length */
 #define BOBIN_ROUND_LENGTH ((float)3.1415926 * (float)CFG_BOBIN_DIAM)
 const float REDCONST = BOBIN_ROUND_LENGTH /(360 * GEAR_RATIO * 1000);
 boolean runMotor=false;
@@ -114,6 +112,10 @@ float getMilage();
 float getTemp();
 float simpleKalman(float newVal);
 //bool reverseState = false;
+// Indicateurs de statut
+bool thermistorConnected = false;
+bool pidActive = false;
+bool encoderConnected = true; // Supposons que l'encodeur est connecté si le code fonctionne
 
 // ====================================================
 // SETUP
@@ -159,7 +161,7 @@ void setup() {
     beepE();
   #endif
 
-  // === ICI on redessine Boot Screen l'écran ===
+  // === ICI on redessine Boot Screen à l'écran ===
   u8g.firstPage();
   do {
     drawBootScreen();
@@ -169,6 +171,21 @@ void setup() {
     enc1.setPinMode(LOW_PULL);
 
     regulator.setpoint = targetTemp;
+}
+
+void updateThermistorStatus() {
+  float temp = getTemp();
+  
+  // Définir des seuils réalistes pour la température (par exemple, entre -40°C et 250°C)
+  if (temp > -40.0 && temp < 250.0) {
+    thermistorConnected = true;
+  } else {
+    thermistorConnected = false;
+  }
+}
+
+void updatePIDStatus() {
+  pidActive = Heat;
 }
 
 /*****************************************************
@@ -194,6 +211,10 @@ void loop() {
     enc1.tick();
     stepper.tick();
 
+    // Mise à jour des indicateurs de statut
+    updateThermistorStatus();
+    updatePIDStatus();
+
     long newTargetTemp = targetTemp;
     long newSpeedX10 = SpeedX10;
     float rest;
@@ -207,8 +228,7 @@ void loop() {
   // Gestion du double/clic encodeur :
   if (enc1.isDouble()) {
     whatToChange = CHANGE_SPEED;
-    interactiveSet();
-    // On "force" la mise à jour de l'affichage
+    interactiveSet();                  // On "force" la mise à jour de l'affichage
   }
   if (enc1.isSingle()) {
     whatToChange = CHANGE_TEMPERATURE;
@@ -322,7 +342,12 @@ void loop() {
     }
   }
 
-  // === ICI on redessine tout l'écran ===
+  // Forcer les états pour le test decocher le commentaire //
+  //thermistorConnected = false;  // ou false
+  //pidActive = true;           // ou true
+  //encoderConnected = false;     // ou false
+
+  // === ICI on redessine tout à l'écran ===
   u8g.firstPage();
   do {
     drawScreen();
@@ -387,21 +412,12 @@ void emStop(int reason) {
   Heat = false;
   analogWrite(CFG_HEATER_PIN, 0);
 
-  // On dessine un écran "Halt" avant de bloquer
-  u8g.firstPage();
-  do {
-    u8g.setFont(u8g_font_9x15Br);
-    u8g.drawStr(0, 20, "*HALT!*");
-    u8g.setFont(u8g_font_6x12);
-    switch (reason) {
-      case OVERHEAT:
-        u8g.drawStr(3, 40, "Overheat");
-        break;
-      case THERMISTOR_ERROR:
-        u8g.drawStr(3, 40, "Thermistor");
-        break;
-    }
-  } while(u8g.nextPage());
+  // Mettre à jour les indicateurs de statut
+  thermistorConnected = false; // Supposons qu'en arrêt d'urgence, on considère le thermistor comme déconnecté
+  pidActive = false;
+  
+  // === ICI on redessine Boot Error à l'écran ===
+  drawError(reason);             // On dessine un écran "Halt" avant de bloquer
 
   // Bips d'alerte
   for(;;) {
@@ -543,6 +559,31 @@ float simpleKalman(float newVal) {
   return _current_estimate;
 }
 
+/************************************************************************************************
+   drawError()
+   => dessine un écran "Halt" "Overheat" "Thermistor" avant de bloquer, en fonction de la raison
+*************************************************************************************************/
+void drawError(int reason) {
+  if (runMotor == false && (reason == OVERHEAT || reason == THERMISTOR_ERROR)) {
+    u8g.firstPage();
+    do {
+      u8g.setFont(u8g_font_9x15Br);
+      u8g.setPrintPos(30, 20);
+      u8g.print("*HALT!*");
+
+      u8g.setFont(u8g_font_6x12);
+      u8g.setPrintPos(32, 40);
+      switch (reason) {
+        case OVERHEAT:
+          u8g.print("Overheat");
+          break;
+        case THERMISTOR_ERROR:
+          u8g.print("Thermistor");
+          break;
+      }
+    } while(u8g.nextPage());
+  }
+}
 /*****************************************************
    drawBootScreen()
    => dessine TOUT l'écran en fonction des variables
@@ -556,9 +597,9 @@ void drawBootScreen() {
     // We want the reference position for printing the string to be in the upper left corner of that string
     u8g.setFontPosTop(); 
     // X i Y coordinates where the string wants to print out on the display
-    u8g.setPrintPos(20, 10); u8g.print("PETCTL");
+    u8g.setPrintPos(20, 10); u8g.print("    PETCTL");
     u8g.setFont(u8g_font_6x12);
-    u8g.setPrintPos(25, 40); u8g.print("mvb V0.11");
+    u8g.setPrintPos(25, 40); u8g.print("mvb V0.11a");
   } while(u8g.nextPage());
   delay(4000); // 2 secondes de splash
 } 
@@ -568,17 +609,22 @@ void drawBootScreen() {
    => dessine TOUT l'écran en fonction des variables
 *****************************************************/
 void drawScreen() {
-  // Si vous voulez alterner polices, on peut le faire
-  // Ici, on va en utiliser deux (une petite, une moyenne)
+  // Réinitialiser la couleur à blanc pour dessiner les éléments généraux
+  u8g.setColorIndex(1); // Blanc
+    
+  // 1) Dessiner une bordure tout autour de l’écran
+  u8g.drawFrame(0, 0, 128, 64);
 
- 
-  u8g.drawFrame(0, 0, 128, 64);   // 1) Dessin du cadre
-  u8g.drawLine(0, 13, 128, 13);   // 2) Dessin ligne haut
-  u8g.drawLine(74, 0, 74, 13);    // 3) Dessin petit ligne verticale
-  u8g.drawLine(0, 52, 128, 52);   // 4) Dessin ligne bas
+  // 2) Dessiner des lignes horizontales
+  u8g.drawLine(0, 13, 128, 13);   // Ligne horizontale en haut
+
+  // 3) Dessiner une ligne verticale pour séparer les sections (par exemple à x=74)
+  u8g.drawLine(74, 0, 74, 13);    // Ligne verticale en haut
+  u8g.drawLine(0, 52, 128, 52);   // Ligne verticale centrale
 
   // Températures en gros (ou moyen)
   // Température courante
+  // 3) Afficher les températures
   { 
     u8g.setFont(u8g_font_9x15Br);
     char buf[10];
@@ -595,8 +641,11 @@ void drawScreen() {
     u8g.setFont(u8g_font_9x15Br);
     // Dessin "Heat" ou pas. -> si Heat = true => on affiche "*"
     u8g.setPrintPos(76, 10);
-    if (Heat) u8g.print("*");
-    else      u8g.print(".");
+    if (Heat) {
+      u8g.print("*");             // Heat ON
+    } else {     
+      u8g.print(".");             // Heat OFF
+    }
 
     char buf[10];
     dtostrf(targetTemp, 4, 0, buf);
@@ -606,14 +655,12 @@ void drawScreen() {
     if (whatToChange == CHANGE_TEMPERATURE && isInteractive()) {
       // Dessiner un fond noir
       u8g.drawBox(86, 1, 41, 12); // (x,y,width,height)
-      // Écrire en "couleur inversée"
-      u8g.setColorIndex(0);
+      u8g.setColorIndex(0); // Écrire en "couleur inversée"
       u8g.setPrintPos(80, 12);
       u8g.print(buf);
       u8g.setPrintPos(116, 8);
       u8g.setFont(u8g_font_5x8r); u8g.print("C");
-      // Revenir en couleur normale
-      u8g.setColorIndex(1);
+      u8g.setColorIndex(1); // Revenir en couleur normale
     } else {
       u8g.print(buf);
       u8g.setPrintPos(116, 8);
@@ -622,13 +669,17 @@ void drawScreen() {
   }
 
   // Vitesse en mm/s
+  // 4) Afficher l'indicateur "runMotor"
   {
     u8g.setFont(u8g_font_9x15Br); //font_blipfest_07n
     // l’indicateur runMotor ou pas. -> si Run = true => on affiche "*"
-    //u8g.setFont(u8g_font_6x12);
-    u8g.setPrintPos(3, 32);
-    if (runMotor) u8g.print("*");
-    else          u8g.print(".");
+    //u8g.setFont(u8g_font_6x12);       // Police petite
+    u8g.setPrintPos(3, 32);           // Position x=3, y=32
+    if (runMotor) {
+      u8g.print("*");                 // Moteur ON
+    } else {
+      u8g.print(".");                 // Moteur OFF
+    }
     
       
     //u8g.setFont(u8g_font_6x12);
@@ -653,6 +704,7 @@ void drawScreen() {
   }
 
   // Avancement (métrage)
+  // 5) Afficher l'avancement (métrage)
   {
     u8g.setFont(u8g_font_9x15Br);
     float dist = getMilage(); // en mètres ?
@@ -666,17 +718,226 @@ void drawScreen() {
     u8g.print(" m");
   }
 
+/*
   // Fin de courses (debug ?) => par exemple
   // endstop = CFG_ENDSTOP_PIN, emendstop = CFG_EMENDSTOP_PIN
+  // 6) Afficher les Endstops
   if (!digitalRead(CFG_ENDSTOP_PIN)) {
-    // Petit symbole "*"
-    u8g.setFont(u8g_font_6x12);
+    u8g.setFont(u8g_font_4x6r);
     u8g.setPrintPos(105, 62);
     u8g.print("END");
   }
   if (!digitalRead(CFG_EMENDSTOP_PIN)) {
-    u8g.setFont(u8g_font_6x12);
+    u8g.setFont(u8g_font_4x6r);
     u8g.setPrintPos(105, 62);
     u8g.print("X");
   }
+*/
+/*
+  // 7.1) Afficher la connexion au Thermistor
+  u8g.setFont(u8g_font_5x8r);
+  u8g.setPrintPos(4, 61); // Position x=5, y=10
+  u8g.print("T:");
+  if (thermistorConnected) {
+    u8g.setPrintPos(14, 61);
+    u8g.print("OK");
+  } else {
+    u8g.setPrintPos(14, 61);
+    u8g.print("ERR");
+  }
+  
+  // 7.2) Afficher l'état du PID
+  u8g.setPrintPos(30, 61); // Position x=100, y=10
+  u8g.print("PID:");
+  if (pidActive) {
+    u8g.setPrintPos(50, 61);
+    u8g.print("ON");
+  } else {
+    u8g.setPrintPos(50, 61);
+    u8g.print("OFF");
+  }
+  
+  // 7.3) Afficher l'état de l'Encodeur
+  // (Supposons que si le code fonctionne, l'encodeur est connecté)
+  u8g.setPrintPos(70, 61); // Position x=5, y=52
+  u8g.print("ENC:");
+  if (encoderConnected) {
+    u8g.setPrintPos(90, 61);
+    u8g.print("OK");
+  } else {
+    u8g.setPrintPos(90, 61);
+    u8g.print("ERR");
+  } */
+
+  // 6) Afficher les Endstops avec boîtes
+  drawEndstopStatus();
+  // 6.1) Afficher les Endstops avec boîtes
+  drawEMEndstopStatus();
+
+  // 7) Afficher les indicateurs de statut avec boîtes et inversion des couleurs
+  drawThermistorStatus();
+  drawPIDStatus();
+  drawEncoderStatus();  
 }
+
+/*****************************************************
+// Fin de courses (debug ?) => par exemple
+// endstop = CFG_ENDSTOP_PIN
+// 6) Afficher les Endstops
+*****************************************************/
+void drawEndstopStatus() {
+  if (!digitalRead(CFG_ENDSTOP_PIN)) { // Endstop activé (LOW)
+    // Dessiner la boîte de fond en blanc
+    u8g.setColorIndex(1); // Blanc
+    u8g.drawBox(97, 54, 17, 8); // (x, y, width, height)
+    
+    // Dessiner "END" en noir
+    u8g.setColorIndex(0); // Noir
+    u8g.setFont(u8g_font_4x6r);
+    u8g.setPrintPos(100, 61); // Ajustez la position selon la police
+    u8g.print("END");
+  }
+  else { // Endstop désactivé (HIGH)
+    // Dessiner la boîte de fond en noir
+    u8g.setColorIndex(1); // Blanc
+    u8g.drawFrame(97, 54, 17, 8); // (x, y, width, height)
+    
+    // Dessiner "END" en blanc
+    u8g.setColorIndex(1); // Blanc
+    u8g.setFont(u8g_font_4x6r);
+    u8g.setPrintPos(100, 61);
+    u8g.print("END");
+  }
+  // Réinitialiser l'indice de couleur à blanc pour éviter les interférences
+  u8g.setColorIndex(1);
+}
+
+/*****************************************************
+// Fin de courses (debug ?) => par exemple
+// emendstop = CFG_EMENDSTOP_PIN
+// 6.1) Afficher les Endstops
+*****************************************************/
+void drawEMEndstopStatus() { 
+  if (!digitalRead(CFG_EMENDSTOP_PIN)) { // EM Endstop activé (LOW)
+    // Dessiner la boîte de fond en blanc
+    u8g.setColorIndex(1); // Blanc
+    u8g.drawBox(115, 54, 11, 8); // (x, y, width, height)
+    
+    // Dessiner "X" en noir
+    u8g.setColorIndex(0); // Noir
+    u8g.setFont(u8g_font_4x6r);
+    u8g.setPrintPos(119, 61); // Ajustez la position selon la police
+    u8g.print("X");
+  }
+  else { // EM Endstop désactivé (HIGH)
+    // Dessiner la boîte de fond en noir
+    u8g.setColorIndex(1); // Blanc
+    u8g.drawFrame(115, 54, 11, 8); // (x, y, width, height)
+    
+    // Dessiner "X" en blanc
+    u8g.setColorIndex(1); // Blanc
+    u8g.setFont(u8g_font_4x6r);
+    u8g.setPrintPos(119, 60);
+    u8g.print("x");
+  }
+  // Réinitialiser l'indice de couleur à blanc pour éviter les interférences
+  u8g.setColorIndex(1);
+}
+
+/*****************************************************
+// 7.1) Afficher la connexion au Thermistor
+*****************************************************/
+void drawThermistorStatus() {
+  if (thermistorConnected) {
+    // Dessiner la boîte de fond en blanc
+    u8g.setColorIndex(1); // Blanc
+    u8g.drawBox(2, 54, 30, 8); // (x, y, largeur, hauteur)
+    
+    // Dessiner "T:" et "OK" en noir
+    u8g.setColorIndex(0); // Noir
+    u8g.setFont(u8g_font_4x6r);
+    u8g.setPrintPos(6, 61); // Position x=6, y=61
+    u8g.print("T:");
+    u8g.setPrintPos(14, 61);
+    u8g.print("OK ");
+  }
+  else {
+    // Dessiner la boîte de fond en noir
+    u8g.setColorIndex(0); // Noir
+    u8g.drawBox(2, 54, 30, 8); // (x, y, largeur, hauteur)
+    
+    // Dessiner "T:" et "ERR" en blanc
+    u8g.setColorIndex(1); // Blanc
+    u8g.setFont(u8g_font_4x6r);
+    u8g.setPrintPos(6, 61); // Position x=6, y=61
+    u8g.print("T:");
+    u8g.setPrintPos(14, 61);
+    u8g.print("ERR");
+  }
+}
+
+/*****************************************************
+// 7.2) Afficher l'état du PID
+*****************************************************/
+void drawPIDStatus() {
+  if (pidActive) {
+    // Dessiner la boîte de fond en blanc
+    u8g.setColorIndex(1); // Blanc
+    u8g.drawBox(33, 54, 30, 8); // (x, y, largeur, hauteur)
+    
+    // Dessiner "PID:" et "ON" en noir
+    u8g.setColorIndex(0); // Noir
+    u8g.setFont(u8g_font_4x6r);
+    u8g.setPrintPos(34, 61); // Position x=33, y=61
+    u8g.print("PID:");
+    u8g.setPrintPos(50, 61);
+    u8g.print("ON ");
+  }
+  else {
+    // Dessiner la boîte de fond en noir
+    u8g.setColorIndex(0); // Noir
+    u8g.drawBox(33, 54, 30, 8); // (x, y, largeur, hauteur)
+    
+    // Dessiner "PID:" et "OFF" en blanc
+    u8g.setColorIndex(1); // Blanc
+    u8g.setFont(u8g_font_4x6r);
+    u8g.setPrintPos(34, 61); // Position x=33, y=61
+    u8g.print("PID:");
+    u8g.setPrintPos(50, 61);
+    u8g.print("OFF");
+  }
+}
+
+/*****************************************************************
+// 7.3) Afficher l'état de l'Encodeur
+// (Supposons que si le code fonctionne, l'encodeur est connecté)
+******************************************************************/
+void drawEncoderStatus() {
+  if (encoderConnected) {
+    // Dessiner la boîte de fond en blanc
+    u8g.setColorIndex(1); // Blanc
+    u8g.drawBox(64, 54, 32, 8); // (x, y, largeur, hauteur)
+    
+    // Dessiner "ENC:" et "OK" en noir
+    u8g.setColorIndex(0); // Noir
+    u8g.setFont(u8g_font_4x6r);
+    u8g.setPrintPos(66, 61); // Position x=65, y=61
+    u8g.print("ENC:");
+    u8g.setPrintPos(82, 61);
+    u8g.print("OK ");
+  }
+  else {
+    // Dessiner la boîte de fond en noir
+    u8g.setColorIndex(0); // Noir
+    u8g.drawBox(64, 54, 32, 8); // (x, y, largeur, hauteur)
+    
+    // Dessiner "ENC:" et "ERR" en blanc
+    u8g.setColorIndex(1); // Blanc
+    u8g.setFont(u8g_font_4x6r);
+    u8g.setPrintPos(66, 61); // Position x=65, y=61
+    u8g.print("ENC:");
+    u8g.setPrintPos(82, 61);
+    u8g.print("ERR");
+  }
+}
+
