@@ -321,7 +321,8 @@ void loop() {
           beepI();
         }
       } else {
-        finalLength = getMilage() + CFG_PULL_EXTRA_LENGTH;
+        //CFG_PULL_EXTRA_LENGTH = 0.07 Longueur supplémentaire à tirer après le déclenchement de la butée [m]
+        finalLength = getMilage() + CFG_PULL_EXTRA_LENGTH;  
       }
     }
   } else {
@@ -567,9 +568,12 @@ void drawError(int reason) {
   if (runMotor == false && (reason == OVERHEAT || reason == THERMISTOR_ERROR)) {
     u8g.firstPage();
     do {
+      u8g.setColorIndex(1); // Blanc  
+      u8g.drawFrame(0, 0, 128, 64); // 1) Dessiner une bordure tout autour de l’écran
+
       u8g.setFont(u8g_font_9x15Br);
       u8g.setPrintPos(30, 20);
-      u8g.print("*HALT!*");
+      u8g.print("*STOP!*");
 
       u8g.setFont(u8g_font_6x12);
       u8g.setPrintPos(32, 40);
@@ -592,16 +596,15 @@ void drawBootScreen() {
   // On peut faire un petit écran de démarrage en utilisant U8glib:
   u8g.firstPage();
   do {
-    // On choisit une police grande :
-    u8g.setFont(u8g_font_9x15Br);
+    u8g.setFont(u8g_font_9x15Br); // On choisit une police grande :
     // We want the reference position for printing the string to be in the upper left corner of that string
     u8g.setFontPosTop(); 
     // X i Y coordinates where the string wants to print out on the display
-    u8g.setPrintPos(20, 10); u8g.print("    PETCTL");
+    u8g.setPrintPos(5, 10); u8g.print("PETCTL ST7920");
     u8g.setFont(u8g_font_6x12);
-    u8g.setPrintPos(25, 40); u8g.print("mvb V0.11a");
+    u8g.setPrintPos(25, 40); u8g.print("mvb V0.11b");
   } while(u8g.nextPage());
-  delay(4000); // 2 secondes de splash
+  delay(5000); // 5 secondes de splash
 } 
 
 /*****************************************************
@@ -616,11 +619,12 @@ void drawScreen() {
   u8g.drawFrame(0, 0, 128, 64);
 
   // 2) Dessiner des lignes horizontales
-  u8g.drawLine(0, 13, 128, 13);   // Ligne horizontale en haut
+  u8g.drawLine(1, 13, 126, 13);   // Ligne horizontale en haut
+  u8g.drawLine(1, 52, 126, 52);   // Ligne horizontale en bas
 
   // 3) Dessiner une ligne verticale pour séparer les sections (par exemple à x=74)
-  u8g.drawLine(74, 0, 74, 13);    // Ligne verticale en haut
-  u8g.drawLine(0, 52, 128, 52);   // Ligne verticale centrale
+  u8g.drawLine(74, 1, 74, 12);    // Ligne verticale en haut
+  u8g.drawLine(64, 14, 64, 51);    // Ligne verticale en milieu
 
   // Températures en gros (ou moyen)
   // Température courante
@@ -629,7 +633,6 @@ void drawScreen() {
     u8g.setFont(u8g_font_9x15Br);
     char buf[10];
     dtostrf(curTemp, 4, 1, buf);
-    // y=30 (baseline) => on voit le texte vers 30
     u8g.setPrintPos(8, 12);
     u8g.print(buf);
     u8g.setPrintPos(2, 8);
@@ -649,7 +652,6 @@ void drawScreen() {
 
     char buf[10];
     dtostrf(targetTemp, 4, 0, buf);
-    // x=70 => un peu plus loin
     u8g.setPrintPos(80, 12);
     // Inversion si whatToChange == CHANGE_TEMPERATURE ?
     if (whatToChange == CHANGE_TEMPERATURE && isInteractive()) {
@@ -671,103 +673,79 @@ void drawScreen() {
   // Vitesse en mm/s
   // 4) Afficher l'indicateur "runMotor"
   {
+    u8g.setFont(u8g_font_4x6r);     
+    u8g.setPrintPos(4, 20); 
+    u8g.print("Speed:");
+
     u8g.setFont(u8g_font_9x15Br); //font_blipfest_07n
     // l’indicateur runMotor ou pas. -> si Run = true => on affiche "*"
-    //u8g.setFont(u8g_font_6x12);       // Police petite
-    u8g.setPrintPos(3, 32);           // Position x=3, y=32
+    u8g.setPrintPos(3, 30);           // Position x=3, y=32
     if (runMotor) {
       u8g.print("*");                 // Moteur ON
     } else {
       u8g.print(".");                 // Moteur OFF
     }
-    
-      
-    //u8g.setFont(u8g_font_6x12);
+
     float spd = (float)SpeedX10 / 10.0;
     char buf[10];
     dtostrf(spd, 4, 1, buf);
-    u8g.setPrintPos(3, 32);
+    u8g.setPrintPos(4, 32);
     if (whatToChange == CHANGE_SPEED && isInteractive()) {
       // Surligne
-      u8g.drawBox(0, 37, 60, 16);
-      u8g.setColorIndex(0);
-      u8g.setPrintPos(3, 32);
+      u8g.setColorIndex(1);
+      u8g.drawFrame(2, 20, 61, 15);
+      //u8g.setColorIndex(0);
+      u8g.setPrintPos(4, 32);
       u8g.print(buf);
-      u8g.setFont(u8g_font_6x12);      
+      u8g.setFont(u8g_font_4x6r);      
       u8g.print(" mm/s");
       u8g.setColorIndex(1);
     } else {
       u8g.print(buf);
-      u8g.setFont(u8g_font_6x12);      
+      u8g.setFont(u8g_font_4x6r);      
       u8g.print(" mm/s");
     }
   }
 
   // Avancement (métrage)
   // 5) Afficher l'avancement (métrage)
-  {
-    u8g.setFont(u8g_font_9x15Br);
-    float dist = getMilage(); // en mètres ?
-    // Dans votre code, getMilage() renvoie "deg * REDCONST"
-    // A vous de voir l'unité exacte (mm, m, etc.)
-    char buf[10];
-    dtostrf(dist, 4, 2, buf);
-    u8g.setPrintPos(12, 48);
-    u8g.print(buf);
-    u8g.setFont(u8g_font_5x8r);
-    u8g.print(" m");
-  }
+ {
+  // Vérifier si l'endstop principal est activé (LOW)
+    if (!digitalRead(CFG_ENDSTOP_PIN)) {
+    // Calculer le reste (en mètres) et le convertir en mm
+    float rest = finalLength - getMilage();
+    float rest_mm = rest * 1000.0;
+    
+      // Afficher le décompte en mm
+      u8g.setFont(u8g_font_4x6r); 
+      u8g.setPrintPos(68, 20);     
+      u8g.print("Extra:");    // Par exemple "Extra:" pour indiquer la longueur supplémentaire
 
-/*
-  // Fin de courses (debug ?) => par exemple
-  // endstop = CFG_ENDSTOP_PIN, emendstop = CFG_EMENDSTOP_PIN
-  // 6) Afficher les Endstops
-  if (!digitalRead(CFG_ENDSTOP_PIN)) {
-    u8g.setFont(u8g_font_4x6r);
-    u8g.setPrintPos(105, 62);
-    u8g.print("END");
+      u8g.setFont(u8g_font_9x15Br);
+      char buf[10];
+      dtostrf(rest_mm, 4, 0, buf);  // Afficher sans décimales
+      u8g.setPrintPos(68, 32);
+      u8g.print(buf);
+      u8g.setFont(u8g_font_4x6r);
+      u8g.print(" mm");
+    }
+    else {
+      u8g.setFont(u8g_font_4x6r); 
+      u8g.setPrintPos(68, 20);     
+      u8g.print("Progress:");   
+
+      u8g.setFont(u8g_font_9x15Br);
+      float dist = getMilage(); // en mètres ?
+      // Dans votre code, getMilage() renvoie "deg * REDCONST"
+      // A vous de voir l'unité exacte (mm, m, etc.)
+      char buf[10];
+      dtostrf(dist, 4, 2, buf);
+      u8g.setPrintPos(76, 32);
+      u8g.print(buf);
+      u8g.setFont(u8g_font_4x6r);
+      u8g.print(" m");
+    }
   }
-  if (!digitalRead(CFG_EMENDSTOP_PIN)) {
-    u8g.setFont(u8g_font_4x6r);
-    u8g.setPrintPos(105, 62);
-    u8g.print("X");
-  }
-*/
-/*
-  // 7.1) Afficher la connexion au Thermistor
-  u8g.setFont(u8g_font_5x8r);
-  u8g.setPrintPos(4, 61); // Position x=5, y=10
-  u8g.print("T:");
-  if (thermistorConnected) {
-    u8g.setPrintPos(14, 61);
-    u8g.print("OK");
-  } else {
-    u8g.setPrintPos(14, 61);
-    u8g.print("ERR");
-  }
-  
-  // 7.2) Afficher l'état du PID
-  u8g.setPrintPos(30, 61); // Position x=100, y=10
-  u8g.print("PID:");
-  if (pidActive) {
-    u8g.setPrintPos(50, 61);
-    u8g.print("ON");
-  } else {
-    u8g.setPrintPos(50, 61);
-    u8g.print("OFF");
-  }
-  
-  // 7.3) Afficher l'état de l'Encodeur
-  // (Supposons que si le code fonctionne, l'encodeur est connecté)
-  u8g.setPrintPos(70, 61); // Position x=5, y=52
-  u8g.print("ENC:");
-  if (encoderConnected) {
-    u8g.setPrintPos(90, 61);
-    u8g.print("OK");
-  } else {
-    u8g.setPrintPos(90, 61);
-    u8g.print("ERR");
-  } */
 
   // 6) Afficher les Endstops avec boîtes
   drawEndstopStatus();
@@ -786,6 +764,8 @@ void drawScreen() {
 // 6) Afficher les Endstops
 *****************************************************/
 void drawEndstopStatus() {
+  int currentColor = 1;  // On suppose que 1 est la couleur par défaut (blanc)
+
   if (!digitalRead(CFG_ENDSTOP_PIN)) { // Endstop activé (LOW)
     // Dessiner la boîte de fond en blanc
     u8g.setColorIndex(1); // Blanc
@@ -808,8 +788,6 @@ void drawEndstopStatus() {
     u8g.setPrintPos(100, 61);
     u8g.print("END");
   }
-  // Réinitialiser l'indice de couleur à blanc pour éviter les interférences
-  u8g.setColorIndex(1);
 }
 
 /*****************************************************
@@ -818,6 +796,8 @@ void drawEndstopStatus() {
 // 6.1) Afficher les Endstops
 *****************************************************/
 void drawEMEndstopStatus() { 
+  int currentColor = 1;  // On suppose que 1 est la couleur par défaut (blanc)
+  
   if (!digitalRead(CFG_EMENDSTOP_PIN)) { // EM Endstop activé (LOW)
     // Dessiner la boîte de fond en blanc
     u8g.setColorIndex(1); // Blanc
@@ -840,8 +820,6 @@ void drawEMEndstopStatus() {
     u8g.setPrintPos(119, 60);
     u8g.print("x");
   }
-  // Réinitialiser l'indice de couleur à blanc pour éviter les interférences
-  u8g.setColorIndex(1);
 }
 
 /*****************************************************
@@ -938,6 +916,5 @@ void drawEncoderStatus() {
     u8g.print("ENC:");
     u8g.setPrintPos(82, 61);
     u8g.print("ERR");
-  }
+  } 
 }
-
