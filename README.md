@@ -24,7 +24,8 @@ les fichiers suivants :
 6. **GyverStepper.h** – Gestion des moteurs pas à pas.
 7. **FastIO.h** – Optimisation des entrées/sorties.
 
-Je vais maintenant examiner le contenu du fichier principal **PETCTL_ST7920.ino** ainsi que celui du fichier de configuration **PETCTL_cfg.h**.
+fichier principal **PETCTL_ST7920.ino** 
+fichier de configuration **PETCTL_cfg.h**.
 
 ### Analyse du Code
 
@@ -45,7 +46,7 @@ Le fichier principal commence par une description du projet et des connexions ma
 - **Thermistance NTC 100K** : broche **A0**.
 - **Buzzer** : broche **A1**.
 
-Il inclut le fichier de configuration **`PETCTL_cfg.h`** et semble gérer les périphériques via des bibliothèques.
+fichier de configuration **`PETCTL_cfg.h`** gérer les périphériques via des bibliothèques.
 
 ---
 
@@ -74,16 +75,16 @@ Ce fichier définit plusieurs paramètres matériels :
 ---
 
 ### **Prochaines Étapes**
-Je vais maintenant analyser le **fonctionnement du programme principal** en détail pour :
+programme principal** en détail pour :
 1. Identifier **comment il contrôle le moteur pas à pas, le chauffage et la gestion de température**.
 2. Vérifier **la gestion de l’encodeur rotatif**.
 3. Examiner l'affichage sur l'**écran ST7920**.
 
-Je vais parcourir **tout le fichier `.ino`** en détail.
 
 ### **Analyse du Code**
 
-Ton programme **gère plusieurs fonctionnalités essentielles** pour ton projet de transformation de bouteilles en filament :
+Ton programme **gère plusieurs fonctionnalités essentielles** 
+projet de transformation de bouteilles en filament :
 
 ---
 
@@ -132,3 +133,4 @@ Ton programme **gère plusieurs fonctionnalités essentielles** pour ton projet 
     - `drawEncoderStatus()`
     - `drawEndstopStatus()`
 - Un **écran d’erreur (Halt, Overheat, Thermistor)** est affiché en cas de problème.
+
