@@ -1,4 +1,4 @@
-// Быстрый IO для AVR (для остальных будет digitalxxxxx)
+// E/S rapide pour AVR (pour les autres ce sera digitalxxxxx)
 // v1.0
 
 #ifndef FastIO_h
