@@ -31,63 +31,97 @@
  v1.9 - bug corrigé avec le retour d'une période 2x
 */
 
-/*
--------------------------------- Arduino NANO 16 МГц (ATmega328) ------------------------------------
-Таймер	| Разрядность	| Частоты			| Периоды			| Выходы	| Пин Arduino	| Пин МК|
---------|---------------|-------------------|-------------------|-----------|---------------|-------|
-Timer0	| 8 бит			| 61 Гц - 1 МГц		| 16 384.. 1 мкс	| CHANNEL_A	| D6			| PD6	|
-        | 				| 					| 					| CHANNEL_B	| D5			| PD5	|
---------|---------------|-------------------|-------------------|-----------|---------------|-------|
-Timer1	| 16 бит		| 0.24 Гц - 1 МГц	| 4 200 000.. 1 мкс	| CHANNEL_A	| D9			| PB1	|
-        | 				| 					| 					| CHANNEL_B	| D10			| PB2	|
---------|---------------|-------------------|-------------------|-----------|---------------|-------|
-Timer2	| 8 бит			| 61 Гц - 1 МГц		| 16 384.. 1 мкс	| CHANNEL_A	| D11			| PB3	|
-        | 				| 					| 					| CHANNEL_B	| D3			| PD3	|
-----------------------------------------------------------------------------------------------------
-                        
------------------------------- Arduino MEGA 16 МГц (ATmega2560) -------------------------------------
-Таймер	| Разрядность	| Частоты			| Периоды			| Выходы	| Пин Arduino	| Пин МК|
---------|---------------|-------------------|-------------------|-----------|---------------|-------|
-Timer0	| 8 бит			| 61 Гц - 1 МГц		| 16 384.. 1 мкс	| CHANNEL_A	| 13			| PB7	|
-        | 				| 					| 					| CHANNEL_B	| 4				| PG5	|
---------|---------------|-------------------|-------------------|-----------|---------------|-------|
-Timer1	| 16 бит		| 0.24 Гц - 1 МГц	| 4 200 000.. 1 мкс	| CHANNEL_A	| 11			| PB5	|
-        | 				| 					| 					| CHANNEL_B	| 12			| PB6	|
-        | 				| 					| 					| CHANNEL_C	| 13			| PB7	|
---------|---------------|-------------------|-------------------|-----------|---------------|-------|
-Timer2	| 8 бит			| 61 Гц - 1 МГц		| 16 384.. 1 мкс	| CHANNEL_A	| 10			| PB4	|
-        | 				| 					| 					| CHANNEL_B	| 9				| PH6	|
---------|---------------|-------------------|-------------------|-----------|---------------|-------|
-Timer3	| 16 бит		| 0.24 Гц - 1 МГц	| 4 200 000.. 1 мкс	| CHANNEL_A	| 5				| PE3	|
-        | 				| 					| 					| CHANNEL_B	| 2				| PE4	|
-        | 				| 					| 					| CHANNEL_C	| 3				| PE5	|
---------|---------------|-------------------|-------------------|-----------|---------------|-------|
-Timer4	| 16 бит		| 0.24 Гц - 1 МГц	| 4 200 000.. 1 мкс	| CHANNEL_A	| 6				| PH3	|
-        | 				| 					| 					| CHANNEL_B	| 7				| PH4	|
-        | 				| 					| 					| CHANNEL_C	| 8				| PH5	|
---------|---------------|-------------------|-------------------|-----------|---------------|-------|
-Timer5	| 16 бит		| 0.24 Гц - 1 МГц	| 4 200 000.. 1 мкс	| CHANNEL_A	| 46			| PL3	|
-        | 				| 					| 					| CHANNEL_B	| 45			| PL4	|
-        | 				| 					| 					| CHANNEL_C	| 44			| PL5	|
-----------------------------------------------------------------------------------------------------
-*/
+/***************************************************************************************
+ *                             Arduino NANO 16 MHz (ATmega328)
+ * -------------------------------------------------------------------------------------
+ *  Timer   | Résolution | Fréquences            | Périodes               | Sorties    | Broche Arduino | Broche µC
+ * -------------------------------------------------------------------------------------
+ *  Timer0  | 8 bits     | 61 Hz - 1 MHz         | 16 384..1 µs           | CHANNEL_A  | D6             | PD6
+ *          |            |                       |                        | CHANNEL_B  | D5             | PD5
+ * -------------------------------------------------------------------------------------
+ *  Timer1  | 16 bits    | 0,24 Hz - 1 MHz       | 4 200 000..1 µs        | CHANNEL_A  | D9             | PB1
+ *          |            |                       |                        | CHANNEL_B  | D10            | PB2
+ * -------------------------------------------------------------------------------------
+ *  Timer2  | 8 bits     | 61 Hz - 1 MHz         | 16 384..1 µs           | CHANNEL_A  | D11            | PB3
+ *          |            |                       |                        | CHANNEL_B  | D3             | PD3
+ * -------------------------------------------------------------------------------------
+ *
+ *                            Arduino MEGA 16 MHz (ATmega2560)
+ * -------------------------------------------------------------------------------------
+ *  Timer   | Résolution | Fréquences            | Périodes               | Sorties    | Broche Arduino | Broche µC
+ * -------------------------------------------------------------------------------------
+ *  Timer0  | 8 bits     | 61 Hz - 1 MHz         | 16 384..1 µs           | CHANNEL_A  | 13             | PB7
+ *          |            |                       |                        | CHANNEL_B  | 4              | PG5
+ * -------------------------------------------------------------------------------------
+ *  Timer1  | 16 bits    | 0,24 Hz - 1 MHz       | 4 200 000..1 µs        | CHANNEL_A  | 11             | PB5
+ *          |            |                       |                        | CHANNEL_B  | 12             | PB6
+ *          |            |                       |                        | CHANNEL_C  | 13             | PB7
+ * -------------------------------------------------------------------------------------
+ *  Timer2  | 8 bits     | 61 Hz - 1 MHz         | 16 384..1 µs           | CHANNEL_A  | 10             | PB4
+ *          |            |                       |                        | CHANNEL_B  | 9              | PH6
+ * -------------------------------------------------------------------------------------
+ *  Timer3  | 16 bits    | 0,24 Hz - 1 MHz       | 4 200 000..1 µs        | CHANNEL_A  | 5              | PE3
+ *          |            |                       |                        | CHANNEL_B  | 2              | PE4
+ *          |            |                       |                        | CHANNEL_C  | 3              | PE5
+ * -------------------------------------------------------------------------------------
+ *  Timer4  | 16 bits    | 0,24 Hz - 1 MHz       | 4 200 000..1 µs        | CHANNEL_A  | 6              | PH3
+ *          |            |                       |                        | CHANNEL_B  | 7              | PH4
+ *          |            |                       |                        | CHANNEL_C  | 8              | PH5
+ * -------------------------------------------------------------------------------------
+ *  Timer5  | 16 bits    | 0,24 Hz - 1 MHz       | 4 200 000..1 µs        | CHANNEL_A  | 46             | PL3
+ *          |            |                       |                        | CHANNEL_B  | 45             | PL4
+ *          |            |                       |                        | CHANNEL_C  | 44             | PL5
+ * -------------------------------------------------------------------------------------
+ *
+ * Remarques :
+ *  - Les valeurs de fréquences (ex. 61 Hz - 1 MHz) et de périodes (ex. 16 384..1 µs)
+ *    dépendent du réglage des préscalers et des modes des timers.
+ *  - Les canaux (CHANNEL_A, CHANNEL_B, CHANNEL_C) correspondent aux sorties PWM/compare 
+ *    disponibles sur chaque timer.
+ *  - Les broches indiquées (Broche Arduino / Broche µC) se réfèrent à l’ATmega concerné.
+ ***************************************************************************************/
 
-/*
-    setPeriod(период) - установка периода в микросекундах и запуск таймера. Возвращает реальный период (точность ограничена разрешением таймера).
-    setFrequency(частота) - установка частоты в Герцах и запуск таймера. Возвращает реальную частоту (точность ограничена разрешением таймера).
-    setFrequencyFloat(частота float) - установка частоты в Герцах и запуск таймера, разрешены десятичные дроби. Возвращает реальную частоту (точность ограничена разрешением таймера).
-    enableISR(источник) - включить прерывания, канал прерываний CHANNEL_A или CHANNEL_B (+ CHANNEL_C у Mega2560)
-    disableISR(источник) - выключить прерывания, канал CHANNEL_A или CHANNEL_B. Счёт таймера не останавливается (без указания параметров будет выключен канал А).
-    pause() - приостановить счёт таймера, не сбрасывая счётчик
-    resume() - продолжить счёт после паузы
-    stop() - остановить счёт и сбросить счётчик
-    restart() - перезапустить таймер (сбросить счётчик)
-    setDefault() - установить параметры таймера по умолчанию ("Ардуино-умолчания")
-    outputEnable(канал, режим) - канал: включить выход таймера CHANNEL_A или CHANNEL_B (+ CHANNEL_C у Mega2560). Режим: TOGGLE_PIN, CLEAR_PIN, SET_PIN (переключить/выключить/включить пин по прерыванию)
-    outputDisable(канал) - отключить выход таймера CHANNEL_A или CHANNEL_B (+ CHANNEL_C у Mega2560, см. такблицу таймеров)
-    outputState(канал, состояние) - сменить состояние канала: HIGH / LOW
-    phaseShift(источник, фаза) - сдвинуть фазу канала на 0-360 градусов (у 8 бит таймеров двигается только канал B)
-*/
+
+/*******************************************************************************************************
+ *  Fonctionnalités (traduction du russe) :
+ *  
+ *   setPeriod(période) 
+ *      - Définit la période en microsecondes et démarre le timer.
+ *      - Retourne la période réellement appliquée (la précision est limitée par la résolution du timer).
+ *   setFrequency(fréquence) 
+ *      - Définit la fréquence en Hertz et démarre le timer.
+ *      - Retourne la fréquence réellement appliquée (la précision est limitée par la résolution du timer).
+ *   setFrequencyFloat(fréquence float)
+ *      - Définit la fréquence en Hertz avec un nombre à virgule (décimal) et démarre le timer.
+ *      - Retourne la fréquence réellement appliquée (la précision est limitée par la résolution du timer).
+ *   enableISR(source)
+ *      - Active les interruptions du timer sur le canal CHANNEL_A ou CHANNEL_B
+ *        (+ CHANNEL_C sur Mega2560).
+ *   disableISR(source)
+ *      - Désactive les interruptions sur le canal CHANNEL_A ou CHANNEL_B.
+ *        Le timer continue de compter (sans paramètre, désactive le canal A).
+ *   pause()
+ *      - Met le timer en pause sans réinitialiser son compteur.
+ *   resume()
+ *      - Reprend le comptage après une pause.
+ *   stop()
+ *      - Arrête le comptage et réinitialise le compteur.
+ *   restart()
+ *      - Redémarre le timer (remise à zéro du compteur).
+ *   setDefault()
+ *      - Restaure les paramètres par défaut d’Arduino pour le timer.
+ *   outputEnable(canal, mode)
+ *      - Active la sortie du timer sur CHANNEL_A ou CHANNEL_B (+ CHANNEL_C sur Mega2560).
+ *      - Le mode peut être : TOGGLE_PIN (inverser l’état), CLEAR_PIN (forcer à LOW), SET_PIN (forcer à HIGH).
+ *   outputDisable(canal)
+ *      - Désactive la sortie du timer sur CHANNEL_A ou CHANNEL_B (+ CHANNEL_C sur Mega2560, voir tableau des timers).
+ *   outputState(canal, état)
+ *      - Change l’état de la sortie du canal : HIGH ou LOW.
+ *   phaseShift(source, phase)
+ *      - Décale la phase du canal de 0 à 360 degrés (pour les timers 8 bits, seul le canal B est décalable).
+ *   
+ *******************************************************************************************************/
+
 
 #define MAX_PERIOD_8 (1000000UL * 1024UL / F_CPU * 256UL)		// 16384 (61 Гц) на 16 МГц
 #define MAX_PERIOD_16 (1000000UL * 1024UL / F_CPU * 65536UL)	// 4194304 (0.24 Гц) на 16 МГц
