@@ -1,40 +1,82 @@
+/***************************************************************************************
+ *     ┌────────────────────────────────────────────────────────────────────────────────┐
+ *     │  Schéma de câblage de l’afficheur (pins) pour les deux exemples (U8glib/U8g2)  │
+ *     └────────────────────────────────────────────────────────────────────────────────┘
+ *
+ *     ┌───────────────┬─────────┬───────────────────────────────────────┐
+ *     │ Pin LCD       │ Signal  │ Connexion Arduino / Alimentation      │
+ *     ├───────────────┼─────────┼───────────────────────────────────────┤
+ *     │ pin 1 (GND)   │ GND     │ GND                                   │
+ *     │ pin 2 (VCC)   │ +5v     │ +5 V                                  │
+ *     │ pin 3 (V0)    │ n/c     │ non connecté                          │
+ *     │ pin 4 (RS)    │ pin 10  │ broche 10 de l’Arduino Nano           │
+ *     │ pin 5 (R/W)   │ pin 11  │ broche 11 de l’Arduino Nano           │
+ *     │ pin 6 (E)     │ pin 13  │ broche 13 de l’Arduino Nano           │
+ *     │ pin 7 (DB0)   │ pin 0   │ broche  0 de l’Arduino Nano           │
+ *     │ pin 8 (DB1)   │ pin 1   │ broche  1 de l’Arduino Nano           │
+ *     │ pin 9 (DB2)   │ pin 2   │ broche  2 de l’Arduino Nano           │
+ *     │ pin 10 (DB3)  │ pin 3   │ broche  3 de l’Arduino Nano           │
+ *     │ pin 11 (DB4)  │ pin 4   │ broche  4 de l’Arduino Nano           │
+ *     │ pin 12 (DB5)  │ pin 5   │ broche  5 de l’Arduino Nano           │
+ *     │ pin 13 (DB6)  │ pin 6   │ broche  6 de l’Arduino Nano           │
+ *     │ pin 14 (DB7)  │ pin 7   │ broche  7 de l’Arduino Nano           │
+ *     │ pin 15 (PSB)  │ +5v     │ +5 V                                  │
+ *     │ pin 16 (NC)   │ n/c     │ non connecté                          │
+ *     │ pin 17 (RST)  │ n/c     │ non connecté                          │
+ *     │ pin 18 (VOUT) │ n/c     │ non connecté                          │
+ *     │ pin 19 (BLA)  │ +3v3    │ 3,3 V (rétroéclairage)                │
+ *     │ pin 20 (BLK)  │ GND     │ GND (rétroéclairage)                  │
+ *     └───────────────┴─────────┴───────────────────────────────────────┘
+ *
+ *   ► Remarque : il s’agit de la version U8glib.
+ ***************************************************************************************/
 
-#define CFG_STEP_DIV          8 /* Stepper driver microstep devision */
+#define CFG_ENC_CLK           3     /* Which pin encoder CLK pin connected */
+#define CFG_ENC_DT            2     /* Which pin encoder DT pin connected */
+#define CFG_ENC_SW            4     /* Which pin encoder SW pin connected */
 
-#define CFG_STEP_STEP_PIN     6 /* Which pin stepper driver STEP pin connected */
-#define CFG_STEP_DIR_PIN      5 /* Which pin stepper driver DIR pin connected */
-#define CFG_STEP_EN_PIN       7 /* Which pin stepper driver EN pin connected */
+#define CFG_STEP_STEP_PIN     6     /* Which pin stepper driver STEP pin connected */
+#define CFG_STEP_DIR_PIN      5     /* Which pin stepper driver DIR pin connected */
+#define CFG_STEP_EN_PIN       7     /* Which pin stepper driver EN pin connected */
 
-#define CFG_STEP_INVERT         /* Invert stepper rotation direction (comment out to disable invertion)*/
+#define CFG_HEATER_PIN        9     /* À quelle pin le MOSFET de chauffage est-il connecté ? */
 
-#define CFG_ENC_CLK           3 /* Which pin encoder CLK pin connected */
-#define CFG_ENC_DT            2 /* Which pin encoder DT pin connected */
-#define CFG_ENC_SW            4 /* Which pin encoder SW pin connected */
+#define CFG_ENDSTOP_PIN       8     /* À quelle pin ENDSTOP est-elle connectée */
+#define CFG_EMENDSTOP_PIN    12     /* À quelle pin la butée EMENDSTOP est-elle connectée */
 
-#define CFG_ENDSTOP_PIN       8 /* À quelle broche ENDSTOP est-elle connectée */
-#define CFG_EMENDSTOP_PIN    12 /* À quelle broche la butée EMENDSTOP est-elle connectée */
+#define CFG_LCD_CLK_PIN      13     /* Which pin lcd st7920 CLK pin connected */
+#define CFG_LCD_DATA_PIN     11     /* Which pin lcd st7920 DATA pin connected */
+#define CFG_LCD_CS_PIN       10     /* Which pin lcd st7920 CS pin connected */
 
-#define CFG_TERM_PIN         A0 /* Which pin termistor connected to*/
+#define CFG_TERM_PIN         A0     /* Which pin A0 thermistance est connectée*/
+#define CFG_SOUND_PIN        A1     /* Which pin A1 le buzzer */
+#define CFG_BOUTON_SW_PIN    A2     /* Définition de la broche du bouton */
 
-#define CFG_ENC_TYPE         TYPE2 /* Type of encoder: TYPE1 or TYPE2 */
+#define CFG_ENC_TYPE      TYPE2     /* Type of encoder: TYPE1 or TYPE2 */
 
-#define CFG_HEATER_PIN        9 /* À quelle broche le MOSFET de chauffage est-il connecté ? */
-#define CFG_BOBIN_DIAM       74 /* Diamètre de la bobine de filament cible [mm] */
-#define CFG_SPEED_INIT       2.5 /* Vitesse de traction initiale [mm/s] */
-#define CFG_SOUND_PIN        A1 /* Connexion de la broche du buzzer */
+#define CFG_STEP_DIV          8     /* Stepper driver microstep devision */
 
-#define CFG_TEMP_INIT        180 /* Initial target temperature [degree C]*/
-#define CFG_TEMP_MAX         290 /* Maximum allowed temperature [degree C], allowed to set to 10 degree less */
-#define CFG_TEMP_MIN         105 /* Minimum allowed temperature to set [degree C] */
+#define CFG_STEP_INVERT             /* Invert stepper rotation direction (comment out to disable invertion)*/
+
+#define CFG_BOBIN_DIAM       74     /* Diamètre de la bobine de filament cible [mm] */
+#define CFG_SPEED_INIT       2.5    /* Vitesse de traction initiale [mm/s] */
+
+#define CFG_TEMP_INIT        180    /* Température cible initiale [degré C] */
+#define CFG_TEMP_MAX         290    /* Température maximale autorisée [degrés C], autorisée à être réglée à 10 degrés de moins */
+#define CFG_TEMP_MIN         105    /* Température minimale autorisée à régler [degré C] */
 
 
-#define CFG_TERM_VALUE 100000 /* Thermistor resistance at 25 degrees C [Om] */
-#define CFG_TERM_VALUE_TEMP 25 /* Thermistor temperature for nominal resistance (almost always 25 C) [degree C] */
-#define CFG_TERM_B_COEFF 4388 /* The beta coefficient of the thermistor (usually 3000-4000) */
-#define CFG_TERM_SERIAL_R 4700 /* the value of the 'other' resistor [Om] */
+#define CFG_TERM_VALUE    100000    /* Thermistor resistance at 25 degrees C [Om] */
+#define CFG_TERM_VALUE_TEMP   25    /* Thermistor temperature for nominal resistance (almost always 25 C) [degree C] */
+#define CFG_TERM_B_COEFF    4388    /* The beta coefficient of the thermistor (usually 3000-4000) */
+#define CFG_TERM_SERIAL_R   4700    /* the value of the 'other' resistor [Om] */
 
-#define CFG_PULL_EXTRA_LENGTH 0.07 /* Extra length to pull after end stop triggered [m] */
+#define CFG_PULL_EXTRA_LENGTH 0.07  /* Longueur supplémentaire à tirer après le déclenchement de la butée [m] */
 
+#define CHANGE_DIRECTION 1  // Définition de l'identifiant du changement de direction
+//#define VOLTAGE_PIN A2  // Entrée de mesure de tension
+//#define MAX_VOLTAGE 5.0 // Tension max mesurable (5V pour Arduino Nano)
+//#define MIN_VOLTAGE 3.5 // Seuil bas de la batterie (ex: 3.3V
 
 // ----------------------------------------------------------------------------------- 
 // Coefficients du régulateur PID
@@ -66,6 +108,7 @@
 // -----------------------------------------------------------------------------------
 // ver la sortie de débogage série Activer/Désactive
 // -----------------------------------------------------------------------------------
+//#define SERIAL_DEBUG_VOLTAGE
 //#define SERIAL_DEBUG_TEMP 
 //#define SERIAL_DEBUG_TEMP_PID 
 //#define SERIAL_DEBUG_STEPPER 
@@ -73,10 +116,8 @@
 /* Rapport de démultiplication pour la variante de réducteur PETPull-2 Zneipas */
 /* 
   8 dents de l'engrenage sur l'arbre du moteur pas à pas interagissent avec
-    34 dents de l'engrenage 1er.
-  11 dents de l'engrenage 1er interagissent avec
-    34 dents de l'engrenage 2e.
-  11 dents de l'engrenage 2e interagissent avec
+    34 dents de l'engrenage 1er. 11 dents de l'engrenage 1er interagissent avec
+    34 dents de l'engrenage 2e. 11 dents de l'engrenage 2e interagissent avec
     55 dents de la bobine cible
 
   rapport de réduction 65,68(18)
@@ -90,10 +131,8 @@
 /* Rapport de démultiplication pour la variante de réducteur RobertSa/Anatoly */
 /* 
   8 dents de l'engrenage sur l'arbre pas à pas interagissent avec
-    l'engrenage à 36 dents du 1er engrenage.
-  8 dents du 1er engrenage interagissent avec
-    l'engrenage à 36 dents du 2e engrenage.
-  8 dents du 2e engrenage interagissent avec
+    36 dents du 1er engrenage. 8 dents du 1er engrenage interagissent avec
+    36 dents du 2e engrenage. 8 dents du 2e engrenage interagissent avec
     55 dents de la bobine cible
 
   rapport de réduction 139,21875
@@ -107,10 +146,9 @@
 /* Rapport de démultiplication pour la variante de réducteur PetPull Zneipas */
 /*
   8 dents de l'engrenage sur l'arbre du moteur pas à pas interagissent avec
-  36 dents de l'engrenage du 1er engrenage.
-  8 dents de l'engrenage du 1er engrenage interagissent avec
-  55 dents de la bobine cible
-  CFG_RED_G2 1 - à exclure) 2e engrenage
+    36 dents de l'engrenage du 1er engrenage. 8 dents de l'engrenage du 1er engrenage interagissent avec
+    55 dents de la bobine cible
+    CFG_RED_G2 1 - à exclure) 2e engrenage
 
   rapport de réduction 30,9375
 */
